@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Russo Quiz">
+    <meta name="description" content="App interattiva per imparare il vocabolario russo-italiano con quiz personalizzabili">
+    <meta name="keywords" content="russo, italiano, vocabolario, quiz, apprendimento, lingue">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iNCIgZmlsbD0idXJsKCNncmFkaWVudDApIi8+CjxkZWZzPgo8bGluZWFyR3JhZGllbnQgaWQ9ImdyYWRpZW50MCIgeDE9IjAiIHkxPSIwIiB4Mj0iMzIiIHkyPSIzMiIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiPgo8c3RvcCBzdG9wLWNvbG9yPSIjNjY3RUVBIi8+CjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzc2NEJBMiIvPgo8L2xpbmVhckdyYWRpZW50Pgo8L2RlZnM+Cjx0ZXh0IHg9IjE2IiB5PSIyMCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjEyIiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+Рус</svg>">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <title>Russo Quiz - Impara il Vocabolario Russo-Italiano</title>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <h2>Caricamento Quiz Russo...</h2>
+            <p>Preparazione del vocabolario in corso</p>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="app-container" class="app-container hidden">
+        <!-- Navigation Header -->
+        <header class="header-container">
+            <nav class="app-navigation">
+                <div class="app-title-container">
+                    <div class="app-logo">
+                        <span class="logo-icon">🎯</span>
+                        <h1 class="main-title">Russo Quiz</h1>
+                    </div>
+                    <div class="language-indicator">
+                        <span class="flag" title="Russo">🇷🇺</span>
+                        <span class="arrow-divider">↔</span>
+                        <span class="flag" title="Italiano">🇮🇹</span>
+                    </div>
+                </div>
+                <div class="nav-controls">
+                    <button id="theme-toggle" class="nav-button" title="Cambia tema">
+                        <span class="theme-icon">🌙</span>
+                    </button>
+                    <button id="info-button" class="nav-button" title="Informazioni">
+                        <span class="info-icon">ℹ️</span>
+                    </button>
+                </div>
+            </nav>
+        </header>
+
+        <!-- Progress Bar (visible during quiz) -->
+        <div id="progress-container" class="progress-container hidden">
+            <div class="progress-info">
+                <span class="progress-text">Progresso della sessione</span>
+                <span class="progress-stats" id="progress-stats">0/0</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <main id="page_content" class="main-content">
+            <!-- Dynamic content will be inserted here -->
+        </main>
+
+        <!-- Quick Stats Sidebar (mobile hidden) -->
+        <aside id="stats-sidebar" class="stats-sidebar hidden">
+            <h3>Statistiche Rapide</h3>
+            <div class="quick-stats">
+                <div class="quick-stat correct">
+                    <span class="stat-icon">✅</span>
+                    <span class="stat-value" id="quick-correct">0</span>
+                    <span class="stat-label">Corrette</span>
+                </div>
+                <div class="quick-stat incorrect">
+                    <span class="stat-icon">❌</span>
+                    <span class="stat-value" id="quick-incorrect">0</span>
+                    <span class="stat-label">Sbagliate</span>
+                </div>
+                <div class="quick-stat skipped">
+                    <span class="stat-icon">⏭️</span>
+                    <span class="stat-value" id="quick-skipped">0</span>
+                    <span class="stat-label">Saltate</span>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Info Modal -->
+    <div id="info-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Informazioni sull'App</h2>
+                <button class="modal-close" onclick="quiz.closeInfoModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Russo Quiz</strong> ti aiuta ad imparare il vocabolario russo-italiano attraverso quiz interattivi.</p>
+                <ul>
+                    <li>📚 <strong>Sostantivi:</strong> Oltre 80 parole comuni</li>
+                    <li>🎨 <strong>Aggettivi:</strong> Più di 100 aggettivi descrittivi</li>
+                    <li>🔤 <strong>Verbi:</strong> 50+ verbi essenziali</li>
+                    <li>⚡ <strong>Avverbi:</strong> 30+ avverbi utili</li>
+                </ul>
+                <p><em>Seleziona le categorie che preferisci e inizia il tuo percorso di apprendimento!</em></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer-container">
+        <div class="footer-content">
+            <p>&copy; 2025 Russo Quiz. Creato per l'apprendimento del russo.</p>
+            <div class="footer-links">
+                <span class="footer-version">v1.0</span>
+                <span class="footer-divider">•</span>
+                <span class="footer-link" onclick="quiz.showInfoModal()">Info</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Load vocabulary data first -->
+    <script src="vocab-data.js"></script>
+    <!-- Then load main script -->
+    <script src="script.js"></script>
+</body>
+</html>
