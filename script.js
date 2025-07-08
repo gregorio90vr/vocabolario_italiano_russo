@@ -287,45 +287,81 @@ class RussoQuiz {
 
         this.usedWords.add(`${this.currentCategory}:${this.currentWord}`);
 
-        this.renderQuizPage();
+        this.smoothTransition(() => {
+            this.renderQuizPage();
+        });
         this.updateProgress();
         this.updateQuickStats();
     }
     
     renderQuizPage() {
         const pageContent = document.getElementById('page_content');
-        pageContent.innerHTML = `
-            <div class="quiz-page">
-                <button class="back-button" onclick="quiz.showWelcomePage()">
-                    ← Torna al Menu Principale
-                </button>
-                
-                <div class="quiz-card">
-                    <div class="category-badge">
-                        ${categoryInfo[this.currentCategory].emoji} ${categoryInfo[this.currentCategory].name}
-                    </div>
-                    <div class="russian-word">${this.currentWord}</div>
+        
+        // Verifica se la struttura quiz esiste già
+        let quizPage = document.querySelector('.quiz-page');
+        
+        if (!quizPage) {
+            // Prima volta - crea la struttura completa
+            pageContent.innerHTML = `
+                <div class="quiz-page">
+                    <button class="back-button" onclick="quiz.showWelcomePage()">
+                        ← Torna al Menu Principale
+                    </button>
                     
-                    ${this.showResult ? this.renderResult() : this.renderQuizInput()}
+                    <div class="quiz-card">
+                        <div class="category-badge">
+                            ${categoryInfo[this.currentCategory].emoji} ${categoryInfo[this.currentCategory].name}
+                        </div>
+                        <div class="russian-word">${this.currentWord}</div>
+                        
+                        <div class="quiz-content">
+                            ${this.showResult ? this.renderResult() : this.renderQuizInput()}
+                        </div>
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
+        } else {
+            // Aggiorna solo il contenuto necessario senza ricaricare tutto
+            const categoryBadge = document.querySelector('.category-badge');
+            const russianWord = document.querySelector('.russian-word');
+            const quizContent = document.querySelector('.quiz-content');
+            
+            if (categoryBadge) {
+                categoryBadge.innerHTML = `${categoryInfo[this.currentCategory].emoji} ${categoryInfo[this.currentCategory].name}`;
+            }
+            if (russianWord) {
+                russianWord.textContent = this.currentWord;
+            }
+            if (quizContent) {
+                // Salva la posizione di scroll prima dell'aggiornamento
+                const scrollY = window.scrollY;
+                quizContent.innerHTML = this.showResult ? this.renderResult() : this.renderQuizInput();
+                
+                // Ripristina la posizione di scroll dopo un frame
+                requestAnimationFrame(() => {
+                    window.scrollTo(0, scrollY);
+                });
+            }
+        }
         
         if (!this.showResult) {
-            // Focus on input with slight delay for better UX
+            // Focus sull'input con un delay maggiore per mobile
             setTimeout(() => {
                 const input = document.getElementById('answer_input');
                 if (input) {
-                    input.focus();
-                    input.select();
+                    // Su mobile, evita il focus automatico che causa scroll
+                    if (window.innerWidth > 768) {
+                        input.focus();
+                        input.select();
+                    }
                 }
-            }, 100);
+            }, 150);
         }
     }
     
     renderQuizInput() {
         return `
-            <div>
+            <div class="quiz-input-container">
                 <input type="text" 
                        id="answer_input" 
                        class="form-control" 
@@ -347,7 +383,7 @@ class RussoQuiz {
                     </button>
                 </div>
                 
-                <div style="margin-top: 20px; color: #666; font-size: 0.9em; text-align: center;">
+                <div class="quiz-hint">
                     💡 Suggerimento: Premi Invio per confermare la risposta
                 </div>
             </div>
@@ -384,17 +420,19 @@ class RussoQuiz {
         }
         
         return `
-            <div class="result-message ${cssClass}">
-                ${emoji} ${message}
-                ${this.getAdditionalInfo()}
-            </div>
-            <div class="btn-group">
-                <button class="btn btn-success" onclick="quiz.nextWord()" title="Vai alla prossima parola">
-                    ▶️ Prossima Parola
-                </button>
-                <button class="btn btn-secondary" onclick="quiz.showWelcomePage()" title="Torna al menu principale">
-                    🏠 Menu Principale
-                </button>
+            <div class="result-container">
+                <div class="result-message ${cssClass}">
+                    ${emoji} ${message}
+                    ${this.getAdditionalInfo()}
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-success" onclick="quiz.nextWord()" title="Vai alla prossima parola">
+                        ▶️ Prossima Parola
+                    </button>
+                    <button class="btn btn-secondary" onclick="quiz.showWelcomePage()" title="Torna al menu principale">
+                        🏠 Menu Principale
+                    </button>
+                </div>
             </div>
         `;
     }
@@ -444,7 +482,9 @@ class RussoQuiz {
         }
         
         this.showResult = true;
-        this.renderQuizPage();
+        this.smoothTransition(() => {
+            this.renderQuizPage();
+        });
         this.startAutoAdvance(4); // Auto-advance after 4 seconds
     }
     
@@ -459,7 +499,9 @@ class RussoQuiz {
         });
         
         this.showResult = true;
-        this.renderQuizPage();
+        this.smoothTransition(() => {
+            this.renderQuizPage();
+        });
         this.startAutoAdvance(3); // Auto-advance after 3 seconds
     }
     
@@ -474,7 +516,9 @@ class RussoQuiz {
         });
         
         this.showResult = true;
-        this.renderQuizPage();
+        this.smoothTransition(() => {
+            this.renderQuizPage();
+        });
         this.startAutoAdvance(3); // Auto-advance after 3 seconds
     }
     
@@ -632,6 +676,37 @@ class RussoQuiz {
                     break;
             }
         }
+    }
+
+    // Metodo per gestire le transizioni fluide
+    smoothTransition(callback) {
+        // Salva la posizione di scroll corrente
+        const scrollY = window.scrollY;
+        
+        // Esegui la callback
+        callback();
+        
+        // Ripristina la posizione dopo il DOM update
+        requestAnimationFrame(() => {
+            // Su mobile, mantieni la posizione relativa al contenuto
+            if (window.innerWidth <= 768) {
+                const quizCard = document.querySelector('.quiz-card');
+                if (quizCard) {
+                    const cardRect = quizCard.getBoundingClientRect();
+                    // Se la card è fuori dalla vista, scroll smooth verso di essa
+                    if (cardRect.top < 0 || cardRect.bottom > window.innerHeight) {
+                        quizCard.scrollIntoView({ 
+                            behavior: 'smooth', 
+                            block: 'center',
+                            inline: 'nearest'
+                        });
+                    }
+                }
+            } else {
+                // Su desktop, mantieni la posizione esatta
+                window.scrollTo(0, scrollY);
+            }
+        });
     }
 }
 
