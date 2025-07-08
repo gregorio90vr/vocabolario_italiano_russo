@@ -1556,3 +1556,56 @@ body {
         height: 24px;
     }
 }
+
+/* Responsive Design for Mobile */
+@media (max-width: 768px) {
+    .app-container {
+        grid-template-areas: 
+            "header"
+            "main"
+            "footer";
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr auto;
+        padding: 10px;
+    }
+
+    .header-container, .stats-sidebar, .footer-container {
+        border-radius: var(--border-radius-small);
+        padding: 10px;
+    }
+
+    .main-title {
+        font-size: 1.8em;
+    }
+
+    .lang-badge {
+        font-size: 0.8em;
+        padding: 6px 12px;
+    }
+
+    .nav-button {
+        width: 40px;
+        height: 40px;
+        font-size: 1em;
+    }
+
+    .stats-sidebar {
+        position: static;
+        margin-top: 20px;
+    }
+
+    .modal-content {
+        max-width: 90%;
+        width: 100%;
+    }
+
+    .modal-header h2 {
+        font-size: 1.2em;
+    }
+
+    .modal-close {
+        width: 35px;
+        height: 35px;
+        font-size: 1.2em;
+    }
+}
