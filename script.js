@@ -186,6 +186,32 @@ class RussoQuiz {
                     Seleziona una o più categorie per iniziare il tuo percorso di apprendimento.
                 </p>
                 
+                <!-- Statistiche inline per mobile/tablet -->
+                <div class="stats-inline">
+                    <div class="stats-inline-grid">
+                        <div class="stat-mini">
+                            <span class="stat-icon">✅</span>
+                            <div class="stat-value">${this.sessionStats.correct}</div>
+                            <div class="stat-label">Corrette</div>
+                        </div>
+                        <div class="stat-mini">
+                            <span class="stat-icon">❌</span>
+                            <div class="stat-value">${this.sessionStats.incorrect}</div>
+                            <div class="stat-label">Sbagliate</div>
+                        </div>
+                        <div class="stat-mini">
+                            <span class="stat-icon">⏭️</span>
+                            <div class="stat-value">${this.sessionStats.skipped}</div>
+                            <div class="stat-label">Saltate</div>
+                        </div>
+                        <div class="stat-mini">
+                            <span class="stat-icon">👁️</span>
+                            <div class="stat-value">${this.sessionStats.cheated}</div>
+                            <div class="stat-label">Aiuti</div>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="simple-card">
                     <h3 class="simple-title">🎯 Scegli le Categorie</h3>
                     <div class="category-grid">
@@ -322,6 +348,7 @@ class RussoQuiz {
     // Rimossa funzione updateProgress
     
     updateQuickStats() {
+        // Aggiorna le statistiche nella sidebar (desktop)
         const quickCorrect = document.getElementById('quick-correct');
         const quickIncorrect = document.getElementById('quick-incorrect');
         const quickSkipped = document.getElementById('quick-skipped');
@@ -329,6 +356,20 @@ class RussoQuiz {
         if (quickCorrect) quickCorrect.textContent = this.sessionStats.correct;
         if (quickIncorrect) quickIncorrect.textContent = this.sessionStats.incorrect;
         if (quickSkipped) quickSkipped.textContent = this.sessionStats.skipped;
+        
+        // Aggiorna anche le statistiche inline (mobile/tablet)
+        this.updateInlineStats();
+    }
+    
+    updateInlineStats() {
+        // Cerca tutti gli elementi delle statistiche inline e li aggiorna
+        const inlineStats = document.querySelectorAll('.stat-mini .stat-value');
+        if (inlineStats.length >= 4) {
+            inlineStats[0].textContent = this.sessionStats.correct;
+            inlineStats[1].textContent = this.sessionStats.incorrect;
+            inlineStats[2].textContent = this.sessionStats.skipped;
+            inlineStats[3].textContent = this.sessionStats.cheated;
+        }
     }
     
     nextWord() {
