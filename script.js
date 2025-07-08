@@ -186,31 +186,8 @@ class RussoQuiz {
                     Seleziona una o più categorie per iniziare il tuo percorso di apprendimento.
                 </p>
                 
-                <!-- Statistiche inline per mobile/tablet -->
-                <div class="stats-inline">
-                    <div class="stats-inline-grid">
-                        <div class="stat-mini">
-                            <span class="stat-icon">✅</span>
-                            <div class="stat-value">${this.sessionStats.correct}</div>
-                            <div class="stat-label">Corrette</div>
-                        </div>
-                        <div class="stat-mini">
-                            <span class="stat-icon">❌</span>
-                            <div class="stat-value">${this.sessionStats.incorrect}</div>
-                            <div class="stat-label">Sbagliate</div>
-                        </div>
-                        <div class="stat-mini">
-                            <span class="stat-icon">⏭️</span>
-                            <div class="stat-value">${this.sessionStats.skipped}</div>
-                            <div class="stat-label">Saltate</div>
-                        </div>
-                        <div class="stat-mini">
-                            <span class="stat-icon">👁️</span>
-                            <div class="stat-value">${this.sessionStats.cheated}</div>
-                            <div class="stat-label">Aiuti</div>
-                        </div>
-                    </div>
-                </div>
+                <!-- Statistiche compatte solo se ci sono dati -->
+                ${this.getCompactStatsDisplay()}
                 
                 <div class="simple-card">
                     <h3 class="simple-title">🎯 Scegli le Categorie</h3>
@@ -230,49 +207,27 @@ class RussoQuiz {
                         ${this.getStartButtonText()}
                     </button>
                 </div>
-                
-                <div class="simple-card">
-                    <h3 class="simple-title">📊 Statistiche della Sessione</h3>
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <span class="stat-icon">✅</span>
-                            <div class="stat-value">${this.sessionStats.correct}</div>
-                            <div class="stat-label">Corrette</div>
-                        </div>
-                        <div class="stat-card">
-                            <span class="stat-icon">❌</span>
-                            <div class="stat-value">${this.sessionStats.incorrect}</div>
-                            <div class="stat-label">Sbagliate</div>
-                        </div>
-                        <div class="stat-card">
-                            <span class="stat-icon">⏭️</span>
-                            <div class="stat-value">${this.sessionStats.skipped}</div>
-                            <div class="stat-label">Saltate</div>
-                        </div>
-                        <div class="stat-card">
-                            <span class="stat-icon">👁️</span>
-                            <div class="stat-value">${this.sessionStats.cheated}</div>
-                            <div class="stat-label">Aiuti</div>
-                        </div>
-                    </div>
-                    ${this.getAccuracyDisplay()}
-                </div>
             </div>
         `;
     }
 
-    getAccuracyDisplay() {
-        const total = this.sessionStats.correct + this.sessionStats.incorrect;
-        if (total === 0) return '';
+    getCompactStatsDisplay() {
+        const totalAnswered = this.sessionStats.correct + this.sessionStats.incorrect + this.sessionStats.skipped + this.sessionStats.cheated;
         
-        const accuracy = Math.round((this.sessionStats.correct / total) * 100);
+        if (totalAnswered === 0) return '';
+        
         return `
-            <div style="margin-top: 20px; text-align: center;">
-                <div style="font-size: 1.2em; font-weight: 600; color: #667eea;">
-                    Precisione: ${accuracy}%
+            <div class="session-summary">
+                <div class="summary-header">
+                    <span class="summary-icon">📈</span>
+                    <span class="summary-title">Sessione Corrente</span>
                 </div>
-                <div style="font-size: 0.9em; color: #666; margin-top: 5px;">
-                    ${this.sessionStats.correct} corrette su ${total} risposte
+                <div class="summary-content">
+                    <span class="summary-text">${totalAnswered} parole studiate</span>
+                    ${this.sessionStats.correct > 0 ? `<span class="summary-badge correct">${this.sessionStats.correct} ✅</span>` : ''}
+                    ${this.sessionStats.incorrect > 0 ? `<span class="summary-badge incorrect">${this.sessionStats.incorrect} ❌</span>` : ''}
+                    ${this.sessionStats.skipped > 0 ? `<span class="summary-badge skipped">${this.sessionStats.skipped} ⏭️</span>` : ''}
+                    ${this.sessionStats.cheated > 0 ? `<span class="summary-badge cheated">${this.sessionStats.cheated} 👁️</span>` : ''}
                 </div>
             </div>
         `;
@@ -357,19 +312,33 @@ class RussoQuiz {
         if (quickIncorrect) quickIncorrect.textContent = this.sessionStats.incorrect;
         if (quickSkipped) quickSkipped.textContent = this.sessionStats.skipped;
         
-        // Aggiorna anche le statistiche inline (mobile/tablet)
-        this.updateInlineStats();
+        // Aggiorna il progress indicator
+        this.updateProgressIndicator();
     }
     
-    updateInlineStats() {
-        // Cerca tutti gli elementi delle statistiche inline e li aggiorna
-        const inlineStats = document.querySelectorAll('.stat-mini .stat-value');
-        if (inlineStats.length >= 4) {
-            inlineStats[0].textContent = this.sessionStats.correct;
-            inlineStats[1].textContent = this.sessionStats.incorrect;
-            inlineStats[2].textContent = this.sessionStats.skipped;
-            inlineStats[3].textContent = this.sessionStats.cheated;
-        }
+    updateProgressIndicator() {
+        const progressIndicator = document.getElementById('progress-indicator');
+        const progressCircleFill = document.getElementById('progress-circle-fill');
+        const progressPercentage = document.getElementById('progress-percentage');
+        
+        if (!progressIndicator || !progressCircleFill || !progressPercentage) return;
+        
+        const totalQuestions = 10;
+        const completedQuestions = this.usedWords.size;
+        const percentage = Math.round((completedQuestions / totalQuestions) * 100);
+        
+        // Calcola il stroke-dashoffset per il cerchio (100.53 è la circonferenza per raggio 16)
+        const circumference = 100.53; // 2 * π * 16
+        const offset = circumference - (percentage / 100) * circumference;
+        
+        // Aggiorna il cerchio
+        progressCircleFill.style.strokeDashoffset = offset;
+        
+        // Aggiorna il testo della percentuale
+        progressPercentage.textContent = `${percentage}%`;
+        
+        // Aggiorna l'attributo data per i colori dinamici
+        progressIndicator.setAttribute('data-progress', percentage.toString());
     }
     
     nextWord() {
@@ -387,10 +356,8 @@ class RussoQuiz {
         });
 
         if (availableWords.length === 0 || this.usedWords.size >= 10) { // Limita il quiz a un massimo di 10 parole
-            // Reset dello stato per permettere un nuovo quiz
-            this.usedWords.clear();
-            this.showWelcomePage();
-            this.showNotification('Quiz completato! 🎉 Puoi iniziarne un altro!', 'success');
+            // Mostra i risultati finali con fuochi d'artificio
+            this.showFinalResults();
             return;
         }
 
@@ -439,7 +406,14 @@ class RussoQuiz {
                     </div>
                     
                     <div class="header-right">
-                        <!-- Barra di progresso rimossa -->
+                        <!-- Progress Indicator -->
+                        <div class="progress-indicator" id="progress-indicator">
+                            <svg class="progress-circle" viewBox="0 0 40 40">
+                                <circle class="progress-circle-bg" cx="20" cy="20" r="16"></circle>
+                                <circle class="progress-circle-fill" cx="20" cy="20" r="16" id="progress-circle-fill"></circle>
+                            </svg>
+                            <div class="progress-percentage" id="progress-percentage">0%</div>
+                        </div>
                     </div>
                 </div>
 
@@ -630,10 +604,12 @@ class RussoQuiz {
         }
         
         return `
-            <div class="result-card ${cssClass}">
-                <div class="result-icon">${icon}</div>
-                <div class="result-message">${message}</div>
-                <div class="result-stats">${this.getAdditionalInfo()}</div>
+            <div class="result-card-compact ${cssClass}">
+                <div class="result-content">
+                    <span class="result-icon-inline">${icon}</span>
+                    <span class="result-message-inline">${message}</span>
+                </div>
+                <div class="result-timer-bar" id="timer-bar"></div>
             </div>
         `;
     }
@@ -688,7 +664,7 @@ class RussoQuiz {
                 userAnswer: this.userAnswer.trim(),
                 result: 'correct'
             });
-            this.showNotification('🎉 Risposta corretta!', 'success');
+            // Rimosso il pop-up di notifica per risposte corrette - il messaggio di risultato è sufficiente
         } else {
             this.sessionStats.incorrect++;
             this.wordHistory.push({
@@ -782,40 +758,22 @@ class RussoQuiz {
     startAutoAdvance(seconds) {
         this.stopAutoAdvance();
         
-        // Create countdown display
-        this.countdownElement = document.createElement('div');
-        this.countdownElement.style.cssText = `
-            position: fixed;
-            top: 80px;
-            right: 20px;
-            background: linear-gradient(135deg, #4facfe, #00f2fe);
-            color: white;
-            padding: 12px 20px;
-            border-radius: 25px;
-            font-weight: 600;
-            font-size: 1em;
-            box-shadow: 0 6px 20px rgba(79, 172, 254, 0.4);
-            z-index: 1000;
-            animation: slideInRight 0.3s ease-out;
-            cursor: pointer;
-        `;
-        
-        // Add click to advance immediately
-        this.countdownElement.onclick = () => {
-            this.stopAutoAdvance();
-            this.nextWord();
-        };
-        
-        document.body.appendChild(this.countdownElement);
+        // Trova la barra del timer nel messaggio di risultato
+        const timerBar = document.getElementById('timer-bar');
+        if (!timerBar) return;
         
         let timeLeft = seconds;
+        const totalTime = seconds;
         
-        const updateCountdown = () => {
+        // Inizializza la barra del timer
+        timerBar.style.width = '100%';
+        timerBar.style.transition = 'none';
+        
+        const updateTimer = () => {
             if (timeLeft > 0) {
-                this.countdownElement.innerHTML = `
-                    <div>🕒 Prossima parola in ${timeLeft}s</div>
-                    <div style="font-size: 0.8em; opacity: 0.8; margin-top: 2px;">Clicca per andare subito</div>
-                `;
+                const percentage = (timeLeft / totalTime) * 100;
+                timerBar.style.transition = 'width 1s linear';
+                timerBar.style.width = `${percentage}%`;
                 timeLeft--;
             } else {
                 this.stopAutoAdvance();
@@ -823,8 +781,11 @@ class RussoQuiz {
             }
         };
         
-        updateCountdown();
-        this.autoAdvanceTimer = setInterval(updateCountdown, 1000);
+        // Avvia il timer dopo un breve delay per permettere la transizione CSS
+        setTimeout(() => {
+            updateTimer();
+            this.autoAdvanceTimer = setInterval(updateTimer, 1000);
+        }, 100);
     }
     
     stopAutoAdvance() {
@@ -832,10 +793,7 @@ class RussoQuiz {
             clearInterval(this.autoAdvanceTimer);
             this.autoAdvanceTimer = null;
         }
-        if (this.countdownElement) {
-            this.countdownElement.remove();
-            this.countdownElement = null;
-        }
+        // Rimuovi la gestione del countdownElement dato che ora usiamo la barra del timer integrata
     }
 
     showNotification(message, type = 'info') {
@@ -862,6 +820,101 @@ class RussoQuiz {
             notification.style.animation = 'slideUp 0.3s ease-out';
             setTimeout(() => notification.remove(), 300);
         }, 2000);
+    }
+
+    calculateBadge(correctPercentage) {
+        if (correctPercentage >= 90) {
+            return { name: 'Oro', emoji: '🥇', color: '#FFD700' };
+        } else if (correctPercentage >= 70) {
+            return { name: 'Argento', emoji: '🥈', color: '#C0C0C0' };
+        } else if (correctPercentage >= 50) {
+            return { name: 'Bronzo', emoji: '🥉', color: '#CD7F32' };
+        } else {
+            return { name: 'Partecipazione', emoji: '🎖️', color: '#4169E1' };
+        }
+    }
+
+    showFinalResults() {
+        const totalWords = 10;
+        const correctPercentage = (this.sessionStats.correct / totalWords) * 100;
+        const incorrectPercentage = (this.sessionStats.incorrect / totalWords) * 100;
+        const skippedPercentage = (this.sessionStats.skipped / totalWords) * 100;
+        
+        const badge = this.calculateBadge(correctPercentage);
+        
+        // Crea container per fuochi d'artificio
+        const fireworksContainer = document.createElement('div');
+        fireworksContainer.className = 'fireworks-container';
+        document.body.appendChild(fireworksContainer);
+
+        // Crea fuochi d'artificio multipli
+        for (let i = 0; i < 10; i++) {
+            setTimeout(() => {
+                const firework = document.createElement('div');
+                firework.className = 'firework';
+                firework.style.left = Math.random() * 90 + 5 + '%';
+                firework.style.animationDelay = Math.random() * 0.5 + 's';
+                fireworksContainer.appendChild(firework);
+            }, i * 200);
+        }
+
+        // Modal dei risultati
+        const scoreModal = document.createElement('div');
+        scoreModal.className = 'score-modal';
+        scoreModal.innerHTML = `
+            <div class="score-header">
+                <h2>🎉 Quiz Completato! 🎉</h2>
+            </div>
+            <div class="badge-display">
+                <div class="badge-icon" style="color: ${badge.color}; font-size: 4em;">${badge.emoji}</div>
+                <div class="badge-name" style="color: ${badge.color}; font-size: 1.5em; font-weight: bold;">${badge.name}</div>
+            </div>
+            <div class="score-stats">
+                <div class="stat-row correct">
+                    <span class="stat-icon">✅</span>
+                    <span class="stat-text">Corrette: ${this.sessionStats.correct}/10 (${correctPercentage.toFixed(1)}%)</span>
+                </div>
+                <div class="stat-row incorrect">
+                    <span class="stat-icon">❌</span>
+                    <span class="stat-text">Sbagliate: ${this.sessionStats.incorrect}/10 (${incorrectPercentage.toFixed(1)}%)</span>
+                </div>
+                <div class="stat-row skipped">
+                    <span class="stat-icon">⏭️</span>
+                    <span class="stat-text">Saltate: ${this.sessionStats.skipped}/10 (${skippedPercentage.toFixed(1)}%)</span>
+                </div>
+            </div>
+            <div class="score-actions">
+                <button class="score-btn primary" onclick="quiz.restartQuiz()">
+                    🔄 Nuovo Quiz
+                </button>
+                <button class="score-btn secondary" onclick="quiz.closeScoreModal()">
+                    🏠 Menu Principale
+                </button>
+            </div>
+        `;
+        document.body.appendChild(scoreModal);
+
+        // Rimuovi fuochi d'artificio dopo 6 secondi
+        setTimeout(() => {
+            fireworksContainer.remove();
+        }, 6000);
+    }
+
+    restartQuiz() {
+        this.closeScoreModal();
+        this.usedWords.clear();
+        this.startQuiz();
+    }
+
+    closeScoreModal() {
+        const modal = document.querySelector('.score-modal');
+        const fireworks = document.querySelector('.fireworks-container');
+        if (modal) modal.remove();
+        if (fireworks) fireworks.remove();
+        
+        // Reset dello stato per permettere un nuovo quiz
+        this.usedWords.clear();
+        this.showWelcomePage();
     }
 
     showInfoModal() {
@@ -944,6 +997,162 @@ style.textContent = `
     .dark-theme .flag {
         filter: invert(1) hue-rotate(180deg);
     }
+
+    /* Fireworks styles */
+    .fireworks-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 10000;
+        overflow: hidden;
+    }
+    
+    .firework {
+        position: absolute;
+        bottom: 10%;
+        width: 8px;
+        height: 8px;
+        background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #f9ca24);
+        border-radius: 50%;
+        animation: firework-explosion 2s ease-out forwards;
+        box-shadow: 0 0 20px currentColor;
+    }
+    
+    @keyframes firework-explosion {
+        0% {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+        }
+        25% {
+            transform: translateY(-200px) scale(1.2);
+            opacity: 0.8;
+        }
+        50% {
+            transform: translateY(-400px) scale(2);
+            opacity: 0.6;
+        }
+        75% {
+            transform: translateY(-500px) scale(3);
+            opacity: 0.3;
+        }
+        100% {
+            transform: translateY(-600px) scale(0);
+            opacity: 0;
+        }
+    }
+    
+    .score-modal {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        z-index: 10001;
+        max-width: 400px;
+        width: 90%;
+        text-align: center;
+        animation: scoreModalSlideIn 0.6s ease-out;
+    }
+    
+    .score-header h2 {
+        margin: 0 0 20px 0;
+        font-size: 1.8em;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    
+    .badge-display {
+        margin: 20px 0;
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 15px;
+        backdrop-filter: blur(10px);
+    }
+    
+    .badge-icon {
+        animation: badgeBounce 1s ease-in-out infinite alternate;
+    }
+    
+    .badge-name {
+        margin-top: 10px;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+    }
+    
+    .score-stats {
+        margin: 20px 0;
+    }
+    
+    .stat-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 10px 0;
+        padding: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        font-size: 1.1em;
+    }
+    
+    .stat-row .stat-icon {
+        margin-right: 10px;
+        font-size: 1.2em;
+    }
+    
+    .score-actions {
+        display: flex;
+        gap: 15px;
+        margin-top: 25px;
+        justify-content: center;
+    }
+    
+    .score-btn {
+        padding: 12px 20px;
+        border: none;
+        border-radius: 25px;
+        font-size: 1em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        min-width: 120px;
+    }
+    
+    .score-btn.primary {
+        background: linear-gradient(45deg, #11998e, #38ef7d);
+        color: white;
+    }
+    
+    .score-btn.secondary {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    .score-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+    
+    @keyframes scoreModalSlideIn {
+        from { 
+            opacity: 0; 
+            transform: translate(-50%, -60%) scale(0.8);
+        }
+        to { 
+            opacity: 1; 
+            transform: translate(-50%, -50%) scale(1);
+        }
+    }
+    
+    @keyframes badgeBounce {
+        from { transform: scale(1); }
+        to { transform: scale(1.1); }
+    }
 `;
 document.head.appendChild(style);
 
@@ -959,3 +1168,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+// Call this function at the end of the quiz
+function endQuiz() {
+    const correct = parseInt(document.getElementById("quick-correct").textContent, 10);
+    const incorrect = parseInt(document.getElementById("quick-incorrect").textContent, 10);
+    const skipped = parseInt(document.getElementById("quick-skipped").textContent, 10);
+
+    showFinalScore(correct, incorrect, skipped);
+}
