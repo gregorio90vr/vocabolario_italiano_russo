@@ -24,12 +24,24 @@ class RussoQuiz {
     }
     
     init() {
+        // Verifica che i dati del vocabolario siano caricati
+        if (typeof vocab === 'undefined' || typeof categoryInfo === 'undefined') {
+            console.error('Dati del vocabolario non caricati!');
+            setTimeout(() => this.init(), 500); // Riprova dopo 500ms
+            return;
+        }
+        
+        // Setup event listeners immediately
+        this.setupEventListeners();
+        
         // Show loading screen briefly for better UX
         setTimeout(() => {
             this.hideLoadingScreen();
             this.showWelcomePage();
-            this.setupEventListeners();
             this.updateQuickStats();
+            
+            // Re-setup event listeners after DOM is fully loaded
+            this.setupModalEventListeners();
         }, 1000);
     }
     
@@ -57,6 +69,16 @@ class RussoQuiz {
             }
         });
 
+        // Handle Escape key to close modal
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('info-modal');
+                if (modal && !modal.classList.contains('hidden')) {
+                    this.closeInfoModal();
+                }
+            }
+        });
+
         // Close modal when clicking outside
         document.addEventListener('click', (e) => {
             const modal = document.getElementById('info-modal');
@@ -76,15 +98,86 @@ class RussoQuiz {
         if (infoButton) {
             infoButton.addEventListener('click', () => this.showInfoModal());
         }
+
+        // Modal close button functionality
+        const modalCloseBtn = document.querySelector('.modal-close');
+        if (modalCloseBtn) {
+            modalCloseBtn.addEventListener('click', () => this.closeInfoModal());
+        }
+    }
+    
+    setupModalEventListeners() {
+        // Gestisci il click sul pulsante di chiusura del modal
+        const modalCloseBtn = document.querySelector('.modal-close');
+        if (modalCloseBtn) {
+            modalCloseBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.closeInfoModal();
+            };
+        }
+        
+        // Gestisci il click sull'overlay del modal (sfondo)
+        const modal = document.getElementById('info-modal');
+        if (modal) {
+            modal.onclick = (e) => {
+                if (e.target === modal) {
+                    this.closeInfoModal();
+                }
+            };
+            
+            // Evita che i click sul contenuto del modal lo chiudano
+            const modalContent = modal.querySelector('.modal-content');
+            if (modalContent) {
+                modalContent.onclick = (e) => {
+                    e.stopPropagation();
+                };
+            }
+        }
+        
+        // Gestisci il click sul pulsante info
+        const infoButton = document.getElementById('info-button');
+        if (infoButton) {
+            infoButton.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.showInfoModal();
+            };
+        }
+        
+        // Gestisci il click sul footer link "Info"
+        const footerInfoLinks = document.querySelectorAll('.footer-link');
+        footerInfoLinks.forEach(link => {
+            if (link.textContent.includes('Info')) {
+                link.onclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.showInfoModal();
+                };
+            }
+        });
     }
     
     showWelcomePage() {
         this.currentPage = 'welcome';
         this.stopAutoAdvance();
-        this.hideProgressBar();
+        // Rimuoviamo la barra di progresso
+        // this.hideProgressBar();
         this.hideStatsSidebar();
         
         const pageContent = document.getElementById('page_content');
+        if (!pageContent) {
+            console.error('Elemento page_content non trovato!');
+            return;
+        }
+        
+        // Verifica che categoryInfo sia disponibile
+        if (typeof categoryInfo === 'undefined') {
+            console.error('categoryInfo non definito!');
+            pageContent.innerHTML = '<div style="text-align:center;padding:50px;">Errore: Dati del vocabolario non caricati</div>';
+            return;
+        }
+        
         pageContent.innerHTML = `
             <div class="welcome-page">
                 <h2 class="welcome-title">Benvenuto al Russo Quiz!</h2>
@@ -192,9 +285,13 @@ class RussoQuiz {
     }
 
     getTotalWordsCount() {
+        if (typeof vocab === 'undefined') return 0;
+        
         let total = 0;
         this.selectedCategories.forEach(category => {
-            total += Object.keys(vocab[category]).length;
+            if (vocab[category] && typeof vocab[category] === 'object') {
+                total += Object.keys(vocab[category]).length;
+            }
         });
         return total;
     }
@@ -202,23 +299,10 @@ class RussoQuiz {
     startQuiz() {
         this.currentPage = 'quiz';
         this.totalQuestions = Math.min(this.getTotalWordsCount(), 10); // Limita il quiz a un massimo di 10 parole
-        this.showProgressBar();
+        // Rimuoviamo la barra di progresso
+        // this.showProgressBar();
         this.showStatsSidebar();
         this.nextWord();
-    }
-
-    showProgressBar() {
-        const progressContainer = document.getElementById('progress-container');
-        if (progressContainer) {
-            progressContainer.classList.remove('hidden');
-        }
-    }
-
-    hideProgressBar() {
-        const progressContainer = document.getElementById('progress-container');
-        if (progressContainer) {
-            progressContainer.classList.add('hidden');
-        }
     }
 
     showStatsSidebar() {
@@ -235,26 +319,16 @@ class RussoQuiz {
         }
     }
 
-    updateProgress() {
-        const answered = this.sessionStats.correct + this.sessionStats.incorrect + this.sessionStats.skipped + this.sessionStats.cheated;
-        const percentage = Math.min((answered / this.totalQuestions) * 100, 100);
-        
-        const progressFill = document.getElementById('progress-fill');
-        const progressStats = document.getElementById('progress-stats');
-        
-        if (progressFill) {
-            progressFill.style.width = `${percentage}%`;
-        }
-        
-        if (progressStats) {
-            progressStats.textContent = `${answered}/${this.totalQuestions}`;
-        }
-    }
-
+    // Rimossa funzione updateProgress
+    
     updateQuickStats() {
-        document.getElementById('quick-correct').textContent = this.sessionStats.correct;
-        document.getElementById('quick-incorrect').textContent = this.sessionStats.incorrect;
-        document.getElementById('quick-skipped').textContent = this.sessionStats.skipped;
+        const quickCorrect = document.getElementById('quick-correct');
+        const quickIncorrect = document.getElementById('quick-incorrect');
+        const quickSkipped = document.getElementById('quick-skipped');
+        
+        if (quickCorrect) quickCorrect.textContent = this.sessionStats.correct;
+        if (quickIncorrect) quickIncorrect.textContent = this.sessionStats.incorrect;
+        if (quickSkipped) quickSkipped.textContent = this.sessionStats.skipped;
     }
     
     nextWord() {
@@ -272,8 +346,10 @@ class RussoQuiz {
         });
 
         if (availableWords.length === 0 || this.usedWords.size >= 10) { // Limita il quiz a un massimo di 10 parole
+            // Reset dello stato per permettere un nuovo quiz
+            this.usedWords.clear();
             this.showWelcomePage();
-            this.showNotification('Quiz completato! 🎉', 'success');
+            this.showNotification('Quiz completato! 🎉 Puoi iniziarne un altro!', 'success');
             return;
         }
 
@@ -287,171 +363,273 @@ class RussoQuiz {
 
         this.usedWords.add(`${this.currentCategory}:${this.currentWord}`);
 
-        this.smoothTransition(() => {
+        // Usa il nuovo sistema di aggiornamento senza scroll jump
+        if (document.querySelector('.quiz-container')) {
+            this.updateQuizContent();
+        } else {
             this.renderQuizPage();
-        });
-        this.updateProgress();
+        }
+        
+        // Forza l'aggiornamento dello stato dell'input per la nuova domanda
+        this.updateInputState();
+        
+        // Rimuoviamo l'aggiornamento della barra di progresso
+        // this.updateProgress();
         this.updateQuickStats();
     }
     
     renderQuizPage() {
         const pageContent = document.getElementById('page_content');
         
-        // Verifica se la struttura quiz esiste già
-        let quizPage = document.querySelector('.quiz-page');
-        
-        if (!quizPage) {
-            // Prima volta - crea la struttura completa
-            pageContent.innerHTML = `
-                <div class="quiz-page">
-                    <button class="back-button" onclick="quiz.showWelcomePage()">
-                        ← Torna al Menu Principale
-                    </button>
-                    
-                    <div class="quiz-card">
-                        <div class="category-badge">
-                            ${categoryInfo[this.currentCategory].emoji} ${categoryInfo[this.currentCategory].name}
+        // Nuovo layout quiz ottimizzato e accattivante
+        pageContent.innerHTML = `
+            <div class="quiz-container">
+                <!-- Header moderno e minimalista -->
+                <div class="quiz-header-modern">
+                    <div class="header-left">
+                        <button class="back-button-modern" onclick="quiz.showWelcomePage()">
+                            <svg class="back-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M19 12H5M12 19l-7-7 7-7"/>
+                            </svg>
+                        </button>
+                        <div class="quiz-title-modern">
+                            <span class="language-indicator">🇷🇺 → 🇮🇹</span>
                         </div>
-                        <div class="russian-word">${this.currentWord}</div>
+                    </div>
+                    
+                    <div class="header-right">
+                        <!-- Barra di progresso rimossa -->
+                    </div>
+                </div>
+
+                <!-- Area principale del quiz -->
+                <div class="quiz-main-content">
+                    <!-- Card della domanda -->
+                    <div class="quiz-question-card">
+                        <div class="category-pill">
+                            <span class="category-emoji">${categoryInfo[this.currentCategory].emoji}</span>
+                            <span class="category-name">${categoryInfo[this.currentCategory].name}</span>
+                        </div>
                         
-                        <div class="quiz-content">
-                            ${this.showResult ? this.renderResult() : this.renderQuizInput()}
+                        <div class="russian-word-display">
+                            ${this.currentWord}
+                        </div>
+                        
+                        <div class="translation-prompt">
+                            Traduci in italiano:
+                        </div>
+                    </div>
+
+                    <!-- Area input e messaggio -->
+                    <div class="quiz-interaction-area">
+                        <div class="input-section">
+                            <input type="text" 
+                                   id="answer_input" 
+                                   class="quiz-input" 
+                                   placeholder="Scrivi la traduzione qui..." 
+                                   value="${this.userAnswer}"
+                                   oninput="quiz.updateUserAnswer(this.value)"
+                                   autocomplete="off"
+                                   spellcheck="false">
+                        </div>
+                        
+                        <div class="message-section" id="quiz_message">
+                            ${this.showResult ? this.renderResultMessage() : this.renderInputHint()}
                         </div>
                     </div>
                 </div>
-            `;
-        } else {
-            // Aggiorna solo il contenuto necessario senza ricaricare tutto
-            const categoryBadge = document.querySelector('.category-badge');
-            const russianWord = document.querySelector('.russian-word');
-            const quizContent = document.querySelector('.quiz-content');
-            
-            if (categoryBadge) {
-                categoryBadge.innerHTML = `${categoryInfo[this.currentCategory].emoji} ${categoryInfo[this.currentCategory].name}`;
-            }
-            if (russianWord) {
-                russianWord.textContent = this.currentWord;
-            }
-            if (quizContent) {
-                // Salva la posizione di scroll prima dell'aggiornamento
-                const scrollY = window.scrollY;
-                quizContent.innerHTML = this.showResult ? this.renderResult() : this.renderQuizInput();
-                
-                // Ripristina la posizione di scroll dopo un frame
-                requestAnimationFrame(() => {
-                    window.scrollTo(0, scrollY);
-                });
-            }
-        }
-        
-        if (!this.showResult) {
-            // Focus sull'input con un delay maggiore per mobile
-            setTimeout(() => {
-                const input = document.getElementById('answer_input');
-                if (input) {
-                    // Su mobile, evita il focus automatico che causa scroll
-                    if (window.innerWidth > 768) {
-                        input.focus();
-                        input.select();
-                    }
-                }
-            }, 150);
-        }
-    }
-    
-    renderQuizInput() {
-        return `
-            <div class="quiz-input-container">
-                <input type="text" 
-                       id="answer_input" 
-                       class="form-control" 
-                       placeholder="Scrivi la traduzione italiana qui..." 
-                       value="${this.userAnswer}"
-                       oninput="quiz.updateUserAnswer(this.value)"
-                       autocomplete="off"
-                       spellcheck="false">
-                
-                <div class="btn-group">
-                    <button class="btn btn-primary" onclick="quiz.submitAnswer()" title="Conferma la tua risposta">
-                        ✓ Conferma Risposta
-                    </button>
-                    <button class="btn btn-warning" onclick="quiz.skipWord()" title="Salta questa parola">
-                        ⏭️ Salta Parola
-                    </button>
-                    <button class="btn btn-secondary" onclick="quiz.showSolution()" title="Mostra la soluzione">
-                        👁️ Mostra Soluzione
-                    </button>
-                </div>
-                
-                <div class="quiz-hint">
-                    💡 Suggerimento: Premi Invio per confermare la risposta
+
+                <!-- Bottoni fissi in basso -->
+                <div class="quiz-actions-bottom">
+                    <div class="action-buttons-grid">
+                        <button id="primary_action" 
+                                class="action-btn primary" 
+                                onclick="quiz.handlePrimaryAction()"
+                                title="${this.showResult ? 'Vai alla prossima parola' : 'Conferma la tua risposta'}">
+                            <span class="btn-icon">${this.showResult ? '▶️' : '✓'}</span>
+                            <span class="btn-text">${this.showResult ? 'Avanti' : 'Conferma'}</span>
+                        </button>
+                        
+                        <button id="secondary_action" 
+                                class="action-btn secondary" 
+                                onclick="quiz.handleSecondaryAction()"
+                                title="${this.showResult ? 'Torna al menu' : 'Salta questa parola'}">
+                            <span class="btn-icon">${this.showResult ? '🏠' : '⏭️'}</span>
+                            <span class="btn-text">${this.showResult ? 'Menu' : 'Salta'}</span>
+                        </button>
+                        
+                        <button id="tertiary_action" 
+                                class="action-btn tertiary" 
+                                onclick="quiz.handleTertiaryAction()"
+                                title="Mostra la soluzione" 
+                                ${this.showResult ? 'style="display:none"' : ''}>
+                            <span class="btn-icon">👁️</span>
+                            <span class="btn-text">Aiuto</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
+        
+        // Gestisci lo stato dell'input
+        this.updateInputState();
     }
     
-    renderResult() {
+    updateQuizContent() {
+        // Aggiorna la categoria e emoji
+        const categoryEmoji = document.querySelector('.category-emoji');
+        const categoryName = document.querySelector('.category-name');
+        if (categoryEmoji) categoryEmoji.textContent = categoryInfo[this.currentCategory].emoji;
+        if (categoryName) categoryName.textContent = categoryInfo[this.currentCategory].name;
+        
+        // Aggiorna la parola russa
+        const russianWord = document.querySelector('.russian-word-display');
+        if (russianWord) russianWord.textContent = this.currentWord;
+        
+        // Rimossa logica di aggiornamento barra progresso
+        
+        // Aggiorna l'input
+        const answerInput = document.getElementById('answer_input');
+        if (answerInput) {
+            answerInput.value = this.userAnswer;
+            // Assicurati che l'input sia abilitato per una nuova domanda
+            if (!this.showResult) {
+                answerInput.disabled = false;
+                answerInput.style.opacity = '1';
+            }
+        }
+        
+        // Aggiorna area messaggi
+        const messageArea = document.getElementById('quiz_message');
+        if (messageArea) {
+            messageArea.innerHTML = this.showResult ? this.renderResultMessage() : this.renderInputHint();
+        }
+        
+        // Aggiorna bottoni
+        const primaryBtn = document.getElementById('primary_action');
+        const secondaryBtn = document.getElementById('secondary_action');
+        const tertiaryBtn = document.getElementById('tertiary_action');
+        
+        if (primaryBtn) {
+            const icon = primaryBtn.querySelector('.btn-icon');
+            const text = primaryBtn.querySelector('.btn-text');
+            if (icon) icon.textContent = this.showResult ? '▶️' : '✓';
+            if (text) text.textContent = this.showResult ? 'Avanti' : 'Conferma';
+            primaryBtn.title = this.showResult ? 'Vai alla prossima parola' : 'Conferma la tua risposta';
+        }
+        
+        if (secondaryBtn) {
+            const icon = secondaryBtn.querySelector('.btn-icon');
+            const text = secondaryBtn.querySelector('.btn-text');
+            if (icon) icon.textContent = this.showResult ? '🏠' : '⏭️';
+            if (text) text.textContent = this.showResult ? 'Menu' : 'Salta';
+            secondaryBtn.title = this.showResult ? 'Torna al menu' : 'Salta questa parola';
+        }
+        
+        if (tertiaryBtn) {
+            tertiaryBtn.style.display = this.showResult ? 'none' : 'flex';
+        }
+    }
+    
+    updateInputState() {
+        const answerInput = document.getElementById('answer_input');
+        if (!answerInput) return;
+
+        if (this.showResult) {
+            // Quando mostra il risultato, disabilita l'input ma mantienilo visibile
+            answerInput.disabled = true;
+            answerInput.style.opacity = '0.6';
+        } else {
+            // Quando è in modalità input, riabilita
+            answerInput.disabled = false;
+            answerInput.style.opacity = '1';
+
+            // Focus solo su desktop per evitare problemi mobile
+            if (window.innerWidth > 768) {
+                setTimeout(() => {
+                    answerInput.focus();
+                    answerInput.select();
+                }, 100);
+            }
+        }
+
+        // Ensure input is editable during quiz
+        if (this.currentPage === 'quiz' && !this.showResult) {
+            answerInput.disabled = false;
+        }
+    }
+    
+    renderResultMessage() {
         const resultType = this.getResultType();
         let message = '';
         let cssClass = '';
-        let emoji = '';
+        let icon = '';
         
         switch (resultType) {
             case 'correct':
                 message = 'Perfetto! Risposta esatta!';
                 cssClass = 'correct';
-                emoji = '🎉';
+                icon = '🎉';
                 break;
             case 'incorrect':
-                message = `Non è corretto. La risposta giusta è: "${this.correctAnswer}"`;
+                message = `La risposta corretta è: "${this.correctAnswer}"`;
                 cssClass = 'incorrect';
-                emoji = '❌';
+                icon = '❌';
                 break;
             case 'skipped':
-                message = `Parola saltata. La traduzione corretta era: "${this.correctAnswer}"`;
-                cssClass = 'solution';
-                emoji = '⏭️';
+                message = `La traduzione corretta era: "${this.correctAnswer}"`;
+                cssClass = 'skipped';
+                icon = '⏭️';
                 break;
             case 'cheated':
-                message = `Ecco la soluzione: "${this.correctAnswer}"`;
+                message = `La soluzione è: "${this.correctAnswer}"`;
                 cssClass = 'solution';
-                emoji = '👁️';
+                icon = '👁️';
                 break;
         }
         
         return `
-            <div class="result-container">
-                <div class="result-message ${cssClass}">
-                    ${emoji} ${message}
-                    ${this.getAdditionalInfo()}
-                </div>
-                <div class="btn-group">
-                    <button class="btn btn-success" onclick="quiz.nextWord()" title="Vai alla prossima parola">
-                        ▶️ Prossima Parola
-                    </button>
-                    <button class="btn btn-secondary" onclick="quiz.showWelcomePage()" title="Torna al menu principale">
-                        🏠 Menu Principale
-                    </button>
-                </div>
+            <div class="result-card ${cssClass}">
+                <div class="result-icon">${icon}</div>
+                <div class="result-message">${message}</div>
+                <div class="result-stats">${this.getAdditionalInfo()}</div>
             </div>
         `;
     }
-
-    getAdditionalInfo() {
-        const total = this.sessionStats.correct + this.sessionStats.incorrect;
-        if (total > 0) {
-            const accuracy = Math.round((this.sessionStats.correct / total) * 100);
-            return `<div style="margin-top: 10px; font-size: 0.9em; opacity: 0.8;">
-                Precisione attuale: ${accuracy}% (${this.sessionStats.correct}/${total})
-            </div>`;
+    
+    renderInputHint() {
+        return `
+            <div class="input-hint-new">
+                <div class="hint-icon">💡</div>
+                <div class="hint-text">Inserisci la traduzione italiana</div>
+                <div class="hint-shortcut">Premi "Conferma" o Invio ⏎</div>
+            </div>
+        `;
+    }
+    
+    // Gestori unificati per le azioni dei bottoni
+    handlePrimaryAction() {
+        if (this.showResult) {
+            this.nextWord();
+        } else {
+            this.submitAnswer();
         }
-        return '';
     }
     
-    updateUserAnswer(value) {
-        this.userAnswer = value;
+    handleSecondaryAction() {
+        if (this.showResult) {
+            this.showWelcomePage();
+        } else {
+            this.skipWord();
+        }
     }
     
+    handleTertiaryAction() {
+        if (!this.showResult) {
+            this.showSolution();
+        }
+    }
+
     submitAnswer() {
         if (!this.userAnswer.trim()) {
             this.showNotification('⚠️ Inserisci una risposta prima di confermare!', 'warning');
@@ -482,9 +660,8 @@ class RussoQuiz {
         }
         
         this.showResult = true;
-        this.smoothTransition(() => {
-            this.renderQuizPage();
-        });
+        this.updateQuizContent();
+        this.updateInputState();
         this.startAutoAdvance(4); // Auto-advance after 4 seconds
     }
     
@@ -499,9 +676,8 @@ class RussoQuiz {
         });
         
         this.showResult = true;
-        this.smoothTransition(() => {
-            this.renderQuizPage();
-        });
+        this.updateQuizContent();
+        this.updateInputState();
         this.startAutoAdvance(3); // Auto-advance after 3 seconds
     }
     
@@ -516,9 +692,8 @@ class RussoQuiz {
         });
         
         this.showResult = true;
-        this.smoothTransition(() => {
-            this.renderQuizPage();
-        });
+        this.updateQuizContent();
+        this.updateInputState();
         this.startAutoAdvance(3); // Auto-advance after 3 seconds
     }
     
@@ -550,6 +725,19 @@ class RussoQuiz {
         return lastEntry ? lastEntry.result : 'correct';
     }
     
+    getAdditionalInfo() {
+        const total = this.sessionStats.correct + this.sessionStats.incorrect;
+        if (total > 0) {
+            const accuracy = Math.round((this.sessionStats.correct / total) * 100);
+            return `Precisione attuale: ${accuracy}% (${this.sessionStats.correct}/${total})`;
+        }
+        return '';
+    }
+    
+    updateUserAnswer(value) {
+        this.userAnswer = value;
+    }
+
     startAutoAdvance(seconds) {
         this.stopAutoAdvance();
         
@@ -609,7 +797,6 @@ class RussoQuiz {
         }
     }
 
-    // New utility methods
     showNotification(message, type = 'info') {
         const notification = document.createElement('div');
         notification.style.cssText = `
@@ -640,6 +827,16 @@ class RussoQuiz {
         const modal = document.getElementById('info-modal');
         if (modal) {
             modal.classList.remove('hidden');
+            modal.style.display = 'flex';
+            
+            // Assicurati che gli event listeners siano configurati
+            const closeBtn = modal.querySelector('.modal-close');
+            if (closeBtn) {
+                closeBtn.onclick = () => this.closeInfoModal();
+            }
+            
+            // Focus sul modal per accessibilità
+            modal.focus();
         }
     }
 
@@ -647,6 +844,7 @@ class RussoQuiz {
         const modal = document.getElementById('info-modal');
         if (modal) {
             modal.classList.add('hidden');
+            modal.style.display = 'none';
         }
     }
 
@@ -663,7 +861,6 @@ class RussoQuiz {
         }
     }
 
-    // Add keyboard shortcuts
     handleKeyboardShortcuts(e) {
         if (this.currentPage === 'quiz' && !this.showResult) {
             switch(e.key) {
@@ -676,37 +873,6 @@ class RussoQuiz {
                     break;
             }
         }
-    }
-
-    // Metodo per gestire le transizioni fluide
-    smoothTransition(callback) {
-        // Salva la posizione di scroll corrente
-        const scrollY = window.scrollY;
-        
-        // Esegui la callback
-        callback();
-        
-        // Ripristina la posizione dopo il DOM update
-        requestAnimationFrame(() => {
-            // Su mobile, mantieni la posizione relativa al contenuto
-            if (window.innerWidth <= 768) {
-                const quizCard = document.querySelector('.quiz-card');
-                if (quizCard) {
-                    const cardRect = quizCard.getBoundingClientRect();
-                    // Se la card è fuori dalla vista, scroll smooth verso di essa
-                    if (cardRect.top < 0 || cardRect.bottom > window.innerHeight) {
-                        quizCard.scrollIntoView({ 
-                            behavior: 'smooth', 
-                            block: 'center',
-                            inline: 'nearest'
-                        });
-                    }
-                }
-            } else {
-                // Su desktop, mantieni la posizione esatta
-                window.scrollTo(0, scrollY);
-            }
-        });
     }
 }
 

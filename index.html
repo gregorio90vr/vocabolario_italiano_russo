@@ -1,14 +1,28 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
+                          <div class="logo-icon-modern">
+                            <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                                <circle cx="14" cy="14" r="12" fill="url(#logoGradient)" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+                                <path d="M8 14h12M14 8v12" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+                                <circle cx="10" cy="10" r="1.5" fill="white" opacity="0.8"/>
+                                <circle cx="18" cy="18" r="1.5" fill="white" opacity="0.8"/>
+                                <defs>
+                                    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#667eea"/>
+                                        <stop offset="100%" style="stop-color:#764ba2"/>
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                        </div>
+                        <h1 class="main-title">VocabFlow</h1><meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#667eea">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="Russo Quiz">
-    <meta name="description" content="App interattiva per imparare il vocabolario russo-italiano con quiz personalizzabili">
-    <meta name="keywords" content="russo, italiano, vocabolario, quiz, apprendimento, lingue">
+    <meta name="apple-mobile-web-app-title" content="VocabFlow">
+    <meta name="description" content="VocabFlow - App moderna per imparare il vocabolario russo-italiano con quiz interattivi">
+    <meta name="keywords" content="russo, italiano, vocabolario, quiz, apprendimento, lingue, VocabFlow">
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
@@ -24,7 +38,7 @@
     <!-- Main Stylesheet -->
     <link rel="stylesheet" href="styles.css">
     
-    <title>Russo Quiz - Impara il Vocabolario Russo-Italiano</title>
+    <title>VocabFlow - Impara il Vocabolario Russo-Italiano</title>
 </head>
 <body>
     <!-- Loading Screen -->
@@ -43,13 +57,22 @@
             <nav class="app-navigation">
                 <div class="app-title-container">
                     <div class="app-logo">
-                        <span class="logo-icon">🎯</span>
-                        <h1 class="main-title">Russo Quiz</h1>
+                        <span class="logo-icon"> </span>
+                        <h1 class="main-title">LinguaBridge</h1>
                     </div>
-                    <div class="language-indicator">
-                        <span class="flag" title="Russo">🇷🇺</span>
-                        <span class="arrow-divider">↔</span>
-                        <span class="flag" title="Italiano">🇮🇹</span>
+                    <div class="language-display-modern">
+                        <div class="lang-badge russo">
+                            <span class="lang-flag">🇷🇺</span>
+                            <span class="lang-text">Русский</span>
+                        </div>
+                        <div class="flow-arrow">
+                            <div class="arrow-line"></div>
+                            <div class="arrow-head"></div>
+                        </div>
+                        <div class="lang-badge italiano">
+                            <span class="lang-flag">🇮🇹</span>
+                            <span class="lang-text">Italiano</span>
+                        </div>
                     </div>
                 </div>
                 <div class="nav-controls">
@@ -63,16 +86,7 @@
             </nav>
         </header>
 
-        <!-- Progress Bar (visible during quiz) -->
-        <div id="progress-container" class="progress-container hidden">
-            <div class="progress-info">
-                <span class="progress-text">Progresso della sessione</span>
-                <span class="progress-stats" id="progress-stats">0/0</span>
-            </div>
-            <div class="progress-bar">
-                <div class="progress-fill" id="progress-fill"></div>
-            </div>
-        </div>
+        <!-- Barra di progresso rimossa -->
 
         <!-- Main Content Area -->
         <main id="page_content" class="main-content">
